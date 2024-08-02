@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualités</title>
+    <link rel="stylesheet" href="/css/style.css"> <!-- Lien vers votre fichier CSS -->
+    <style>
+        /* Styles de base pour les cartes */
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .card {
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card img {
+            width: 100%;
+            height: 40%;
+        }
+
+        .card-content {
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            margin: 0 0 10px;
+        }
+
+        .card-description {
+            font-size: 1rem;
+            margin: 0 0 10px;
+        }
+
+        .card-date {
+            font-size: 0.9rem;
+            color: #777;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <h1>Actualités</h1>
+    <div class="card-container">
+        <% actuialites.forEach(function(actuialite) { %>
+            <div class="card">
+                <img  class="imag" src="<%= actuialite.image %>" alt="<%= actuialite.titre %>">
+                <div class="card-content">
+                    <h2 class="card-title"><%= actuialite.titre %></h2>
+                    <p class="card-date"><%= new Date(actuialite.date_publication).toLocaleDateString('fr-FR') %></p>
+                    <p class="card-description"><%= actuialite.contenu %></p>
+                  
+                </div>
+                <a href="#"> inscrire</a>
+                <a href="#"> voir plus </a>
+            </div>
+        <% }); %>
+    </div>
+
+</body>
+</html>

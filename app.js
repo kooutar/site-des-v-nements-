@@ -7,19 +7,29 @@ const crypto = require('crypto');
 var path=require('path');
 const mysql = require('mysql2');//module pour interagir avec une base de données MySQL
 const app = express();
+const multer = require('multer');//pour les img
+const fs = require('fs');  // Importer fs pour lire le fichier en tant que binaire
 exports.app = app;
-// const multer = require('multer');
+
 
 //Configuration de l'application
 app.use(bodyParser.json());// Utilisation de body-parser pour analyser les requêtes JSON
 app.use(bodyParser.urlencoded({ extended: true }));// Middleware pour parser les données du formulaire
-// app.use(cors());
-// app.use(fileUpload());
+
 
 app.use(express.static(path.join(__dirname,'')));// Servir les fichiers statiques depuis le répertoire courant
 
 app.set('views', path.join(__dirname,'views'))
 app.set('view engine', 'ejs');
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+      cb(null, 'public/uploads'); // Vérifiez que ce dossier existe
+  },
+  filename: (req, file, cb) => {
+      cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
 
 
 
@@ -112,100 +122,39 @@ app.post('/login', (req, res) => {
         }
       });
     });
-    // Configure Nodemailer
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: 'kkaoutar446@gmail.com',
-      pass: 'youcode2024'
-    }
+
+// Route pour traiter le formulaire et stocker l'image dans la base de données
+app.post('/actuialite', upload.single('imgActulaite'), (req, res) => {
+  if (!req.file) {
+      return res.status(400).send('Le téléchargement de l\'image est obligatoire.');
+  }
+
+  const { titre, discription, date } = req.body;
+  const imgActulaite = req.file.path; // Les données de l'image sous forme de buffer
+  console.log(imgActulaite);
+  // Insérer les données dans la base de données
+  const query = 'INSERT INTO actulaite (titre, contenu, date_publication , image) VALUES (?, ?, ?, ?)';
+  db.query(query, [titre, discription, date,imgActulaite], (err, result) => {
+      if (err) {
+          console.error('Erreur lors de l\'insertion des données:', err);
+          return res.status(500).send('Erreur lors de l\'insertion des données.');
+      }
+     console.log('Données enregistrées avec succès.');
+     res.redirect('actuialite')
   });
+});
 
-  
-  
-//   app.get('/forgetPassword', (req, res) => {
-//     res.send(`
-//       <form action="/sendCode" method="post">
-//         <label for="email">Email:</label>
-//         <input type="email" id="email" name="email" required>
-//         <button type="submit">Envoyer le code</button>
-//       </form>
-//     `);
-//   });
-  
-//   app.post('/sendCode', (req, res) => {
-//     const email = req.body.email;
-//     const code = crypto.randomBytes(3).toString('hex'); // Générer un code aléatoire
-//     transporter.sendMail({
-//         from: 'kkaoutar446@gmail.com',
-//         to: email,
-//         subject: 'Code de réinitialisation de mot de passe',
-//         text: `Votre code de réinitialisation est : ${code}`
-//       },(error, info) => {
-//               if (error) {
-//                 return console.log(error);
-//               }});
-//       console.log('iciiiiiiiiii');
-
-//     });
-  
-    // connection.query('UPDATE utilisateurs SET reset_code = ? WHERE email = ?', [code, email], (err, results) => {
-    //   if (err) throw err;
-  
-    //   if (results.affectedRows > 0) {
-    //     transporter.sendMail({
-    //       from: 'your_email@gmail.com',
-    //       to: email,
-    //       subject: 'Code de réinitialisation de mot de passe',
-    //       text: `Votre code de réinitialisation est : ${code}`
-    //     }, (error, info) => {
-    //       if (error) {
-    //         return console.log(error);
-    //       }
-    //       res.send(`
-    //         <form action="/resetPassword" method="post">
-    //           <input type="hidden" name="email" value="${email}">
-    //           <label for="code">Code:</label>
-    //           <input type="text" id="code" name="code" required>
-    //           <button type="submit">Vérifier le code</button>
-    //         </form>
-    //       `);
-    //     });
-    //   } else {
-    //     res.send('Email non trouvé.');
-    //   }
-    // });
-  
-  
-//   app.post('/resetPassword', (req, res) => {
-//     const { email, code } = req.body;
-  
-//     connection.query('SELECT * FROM users WHERE email = ? AND reset_code = ?', [email, code], (err, results) => {
-//       if (err) throw err;
-  
-//       if (results.length > 0) {
-//         res.send(`
-//           <form action="/updatePassword" method="post">
-//             <input type="hidden" name="email" value="${email}">
-//             <label for="password">Nouveau mot de passe:</label>
-//             <input type="password" id="password" name="password" required>
-//             <button type="submit">Mettre à jour le mot de passe</button>
-//           </form>
-//         `);
-//       } else {
-//         res.send('Code invalide.');
-//       }
-//     });
-//   });
-  
-//   app.post('/updatePassword', (req, res) => {
-//     const { email, password } = req.body;
-  
-//     connection.query('UPDATE users SET password = ?, reset_code = NULL WHERE email = ?', [password, email], (err, results) => {
-//       if (err) throw err;
-//       res.send('Mot de passe mis à jour avec succès.');
-//     });
-//   });
+//route pour recuperer les donnes de table
+app.get('/actuialite', (req, res) => {
+  const query = 'SELECT * FROM actulaite';
+  db.query(query, (err, results) => {
+      if (err) {
+          console.error('Erreur lors de la récupération des données:', err);
+          return res.status(500).send('Erreur lors de la récupération des données.');
+      }
+      res.render('actuialite', { actuialites: results });
+  });
+});
 
 app.get('/index', (req, res) => {
     res.render('index');
@@ -226,6 +175,11 @@ app.get('/index', (req, res) => {
   app.get('/forgetPassword', (req, res) => {
     res.render('forgetPassword');
   });
+
+  app.get('/actuialite', (req, res) => {
+    res.render('actuialite');
+  });
+  
 
   app.listen(8000,function(){
     console.log("heard en 8000");
